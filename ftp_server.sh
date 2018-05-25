@@ -17,9 +17,10 @@ then
 	exit 1
 else
 	echo "This script will install ftp server on this machine"
+	echo "It will also create a test user ftptest"
 fi
 
-if yum list installed vsftpd > /dev/null 2>&1
+if yum list installed vsftpd
 then
 	systemctl -q is-active vsftpd && {
 		systemctl stop vsftpd
@@ -62,3 +63,18 @@ userdel -r -f $USER1
 useradd $USER1
 echo $PASSWORD1 | passwd --stdin $USER1
 echo $USER1 > /etc/vsftpd.userlist
+
+if [[ $FIREWALL == "yes" ]]
+then
+	if systemctl -q is-active firewall-cmd
+	then
+		firewall-cmd --permanent --add-service ftp
+		firewall-cmd --reload
+		echo "ftp added to firewall"
+	else
+		echo "firewalld not running"
+		echo "No changes made to firewall"
+	fi
+fi
+
+systemctl restart vsftpd
