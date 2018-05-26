@@ -1,8 +1,8 @@
 #!/bin/bash
 # This script will install vsftpd on this machine
 # Start of user inputs
-#FIREWALL="yes"
-FIREWALL="no"
+FIREWALL="yes"
+#FIREWALL="no"
 USER1=ftptest
 PASSWORD1="redhat"
 # End of user inputs
@@ -32,30 +32,32 @@ then
 fi
 
 echo "Installing $INSTALLPACKAGES.........."
-yum install -y -q $INSTALLPACKAGES > /dev/null 2>&1
+yum install -y $INSTALLPACKAGES
 echo "Done"
 
 systemctl start vsftpd
-systemctl -q enable vsftpd
+systemctl enable vsftpd
 
 # Modify the ftp config file
-sed -i 's/.*anonymous_enable.*/anonymous_enable=NO/' /etc/vsftpd/vsftpd.conf
-sed -i 's/.*local_enable.*/local_enable=YES/' /etc/vsftpd/vsftpd.conf
-sed -i 's/^write_enable.*/write_enable=YES/' /etc/vsftpd/vsftpd.conf
-sed -i 's/.*local_umask.*/local_mask=022/' /etc/vsftpd/vsftpd.conf
-sed -i 's/.*dirmessage_enable.*/dirmessage_enable=YES/' /etc/vsftpd/vsftpd.conf
-sed -i 's/.*xferlog_enable.*/xferlog_enable=YES/' /etc/vsftpd/vsftpd.conf
-sed -i 's/.*connect_from_port_20.*/connect_from_port_20=YES/' /etc/vsftpd/vsftpd.conf
-sed -i 's/.*xferlog_std_format.*/xferlog_std_format=YES/' /etc/vsftpd/vsftpd.conf
-#sed -i 's/.*listen.*/listen=NO/' /etc/vsftpd/vsftpd.conf
-sed -i 's/.*listen_ipv6.*/listen_ipv6=YES/' /etc/vsftpd/vsftpd.conf
-sed -i 's/.*pam_service_name.*/pam_service_name=vsftpd/' /etc/vsftpd/vsftpd.conf
-sed -i 's/.*userlist_enable.*/userlist_enable=YES/' /etc/vsftpd/vsftpd.conf
-sed -i 's/.*tcp_wrappers.*/tcp_wrappers=YES/' /etc/vsftpd/vsftpd.conf
-echo "userlist_file=/etc/vsftpd.userlist" >> /etc/vsftpd/vsftpd.conf
-echo "userlist_deny=NO" >> /etc/vsftpd/vsftpd.conf
-echo "chroot_local_user=YES" >> /etc/vsftpd/vsftpd.conf
-echo "allow_writable_chroot=YES" >> /etc/vsftpd/vsftpd.conf
+cat > /etc/vsftpd/vsftpd.conf << EOF
+anonymous_enable=NO
+local_enable=YES
+write_enable=YES
+local_umask=022
+dirmessage_enable=YES
+xferlog_enable=YES
+connect_from_port_20=YES
+xferlog_std_format=YES
+listen=NO
+listen_ipv6=YES
+pam_service_name=vsftpd
+userlist_enable=YES
+tcp_wrappers=YES
+userlist_file=/etc/vsftpd.userlist
+userlist_deny=NO
+chroot_local_user=YES
+allow_writeable_chroot=YES
+EOF
 
 setsebool -P ftpd_full_access=1
 
@@ -66,7 +68,7 @@ echo $USER1 > /etc/vsftpd.userlist
 
 if [[ $FIREWALL == "yes" ]]
 then
-	if systemctl -q is-active firewall-cmd
+	if systemctl -q is-active firewalld
 	then
 		firewall-cmd --permanent --add-service ftp
 		firewall-cmd --reload
